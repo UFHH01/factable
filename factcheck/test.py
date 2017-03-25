@@ -18,6 +18,32 @@ from statistics import mode
 DEBUG = True
 
 
+class VoteClassifier(ClassifierI):
+
+    def __init__(self, *classifiers):
+        self._classifiers = classifiers
+
+    def classify(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+
+        return mode(votes)
+
+
+    def confidence(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+
+        choiceVotes = votes.count(mode(votes))
+        conf = choiceVotes/len(votes)
+
+        return conf
+
+
 # Open text dumps
 trueText = open('true_text_dump.txt', 'r').read()
 falseText = open('false_text_dump.txt', 'r').read()
@@ -98,7 +124,7 @@ featureSets = []
 for (s, c) in documents:
     featureSets.append((findFeatures(s), c))
 
-savedFeatureSets = open('saved_word_features.pickle', 'wb')
+savedFeatureSets = open('saved_feature_set.pickle', 'wb')
 pickle.dump(featureSets, savedFeatureSets)
 savedFeatureSets.close()
 
@@ -107,8 +133,8 @@ print(len(featureSets))
 
 
 # Training and Testing Set
-trainingSet = featureSets[:400]
-testingSet = featureSets[400:]
+trainingSet = featureSets[:350]
+testingSet = featureSets[350:]
 
 
 # Multinomial Naive Bayes Classifier
@@ -155,3 +181,15 @@ print('LinearSVC Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(Line
 saveClassifier = open('linearSVC.pickle', 'wb')
 pickle.dump(LinearSVCClassifier, saveClassifier)
 saveClassifier.close()
+
+# Voted Classifier
+votedClassifier = VoteClassifier(MultinomialNBClassifier,
+                                 BernoulliNBClassifier,
+                                 LogisticRegressionclassifier,
+                                 StochasticGradientDescentClassifier,
+                                 LinearSVCClassifier)
+
+def factAnalysis(text):
+    features = findFeatures(text)
+    return votedClassifier.classify(features), votedClassifier.confidence(features)
+
