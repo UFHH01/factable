@@ -4,66 +4,30 @@
 
 import nltk
 import random
-from nltk import word_tokenize, sent_tokenize
-from nltk.stem import PorterStemmer
+from nltk import word_tokenize
 from nltk.classify.scikitlearn import SklearnClassifier
 import pickle
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import LinearSVC
-from nltk.classify import ClassifierI
-from statistics import mode
 
 
 DEBUG = True
 
 
-class VoteClassifier(ClassifierI):
-
-    def __init__(self, *classifiers):
-        self._classifiers = classifiers
-
-    def classify(self, features):
-        votes = []
-        for c in self._classifiers:
-            v = c.classify(features)
-            votes.append(v)
-
-        return mode(votes)
-
-
-    def confidence(self, features):
-        votes = []
-        for c in self._classifiers:
-            v = c.classify(features)
-            votes.append(v)
-
-        choiceVotes = votes.count(mode(votes))
-        conf = choiceVotes/len(votes)
-
-        return conf
-
-
 # Open text dumps
-trueText = open('true_text_dump.txt', 'r').read()
-falseText = open('false_text_dump.txt', 'r').read()
-
+trueText = open('true.txt', 'r')
+falseText = open('false.txt', 'r')
 
 # Extract out sentence tokens from each text dump
 trueSentences = []
 falseSentences = []
 
-for l in trueText.split('\n'):
-    sentences = sent_tokenize(l)
+for l in trueText:
+    trueSentences.append(l)
 
-    for s in sentences:
-        trueSentences.append(s)
-
-for l in falseText.split('\n'):
-    sentences = sent_tokenize(l)
-
-    for s in sentences:
-        falseSentences.append(s)
+for l in falseText:
+    falseSentences.append(l)
 
 if DEBUG:
     print(trueSentences)
@@ -95,7 +59,7 @@ for s in falseSentences:
 
 
 wordFeatures = nltk.FreqDist(wordFeatures)
-wordFeatures = list(wordFeatures.keys())[:500]
+wordFeatures = list(wordFeatures.keys())[:10000]
 
 if DEBUG:
     print(wordFeatures)
@@ -128,68 +92,93 @@ savedFeatureSets = open('saved_feature_set.pickle', 'wb')
 pickle.dump(featureSets, savedFeatureSets)
 savedFeatureSets.close()
 
-random.shuffle(featureSets)
-print(len(featureSets))
+
+maxAvg = 0
+maxMNB = 0
+maxBNB = 0
+maxLReg = 0
+maxSGD = 0
+maxLSVC = 0
 
 
-# Training and Testing Set
-trainingSet = featureSets[:350]
-testingSet = featureSets[350:]
+while True:
+    random.shuffle(featureSets)
+    print(len(featureSets))
 
 
-# Multinomial Naive Bayes Classifier
-MultinomialNBClassifier = SklearnClassifier(MultinomialNB())
-MultinomialNBClassifier.train(trainingSet)
-print('Multinomial Naive Bayes Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(MultinomialNBClassifier, testingSet)) * 100)
+    # Training and Testing Set
+    trainingSet = featureSets[:9740]
+    testingSet = featureSets[9740:]
 
-saveClassifier = open('multinomialNaiveBayes.pickle', 'wb')
-pickle.dump(MultinomialNBClassifier, saveClassifier)
-saveClassifier.close()
 
-# Bernoulli Naive Bayes Classifier
-BernoulliNBClassifier = SklearnClassifier(BernoulliNB())
-BernoulliNBClassifier.train(trainingSet)
-print('Bernoulli Naive Bayes Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(BernoulliNBClassifier, testingSet)) * 100)
+    # Multinomial Naive Bayes Classifier
+    MultinomialNBClassifier = SklearnClassifier(MultinomialNB())
+    MultinomialNBClassifier.train(trainingSet)
 
-saveClassifier = open('bernoulliNaiveBayes.pickle', 'wb')
-pickle.dump(BernoulliNBClassifier, saveClassifier)
-saveClassifier.close()
+    # Bernoulli Naive Bayes Classifier
+    BernoulliNBClassifier = SklearnClassifier(BernoulliNB())
+    BernoulliNBClassifier.train(trainingSet)
 
-# Logistic Regression Classifier
-LogisticRegressionclassifier = SklearnClassifier(LogisticRegression())
-LogisticRegressionclassifier.train(trainingSet)
-print('Logistic Regression Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(LogisticRegressionclassifier, testingSet)) * 100)
+    # Logistic Regression Classifier
+    LogisticRegressionclassifier = SklearnClassifier(LogisticRegression())
+    LogisticRegressionclassifier.train(trainingSet)
 
-saveClassifier = open('logisticRegression.pickle', 'wb')
-pickle.dump(LogisticRegressionclassifier, saveClassifier)
-saveClassifier.close()
+    # Stochastic Gradient Descent Classifier
+    StochasticGradientDescentClassifier = SklearnClassifier(SGDClassifier())
+    StochasticGradientDescentClassifier.train(trainingSet)
 
-# Stochastic Gradient Descent Classifier
-StochasticGradientDescentClassifier = SklearnClassifier(SGDClassifier())
-StochasticGradientDescentClassifier.train(trainingSet)
-print('Stochastic Gradient Descent Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(StochasticGradientDescentClassifier, testingSet)) * 100)
+    # LinearSVC Classifier
+    LinearSVCClassifier = SklearnClassifier(LinearSVC())
+    LinearSVCClassifier.train(trainingSet)
 
-saveClassifier = open('stochasticGradientDescent.pickle', 'wb')
-pickle.dump(StochasticGradientDescentClassifier, saveClassifier)
-saveClassifier.close()
+    accuracyMNB = (nltk.classify.accuracy(MultinomialNBClassifier, testingSet)) * 100
+    accuracyBNB = (nltk.classify.accuracy(BernoulliNBClassifier, testingSet)) * 100
+    accuracyLReg = (nltk.classify.accuracy(LogisticRegressionclassifier, testingSet)) * 100
+    accuracySGD = (nltk.classify.accuracy(StochasticGradientDescentClassifier, testingSet)) * 100
+    accuracyLSVC = (nltk.classify.accuracy(LinearSVCClassifier, testingSet)) * 100
 
-# LinearSVC Classifier
-LinearSVCClassifier = SklearnClassifier(LinearSVC())
-LinearSVCClassifier.train(trainingSet)
-print('LinearSVC Classifier Algorithm Accuracy %:', (nltk.classify.accuracy(LinearSVCClassifier, testingSet)) * 100)
+    avg = (accuracyMNB + accuracyBNB + accuracyLReg + accuracySGD + accuracyLSVC) / 5
 
-saveClassifier = open('linearSVC.pickle', 'wb')
-pickle.dump(LinearSVCClassifier, saveClassifier)
-saveClassifier.close()
+    if avg > maxAvg:
+        maxAvg = avg
+        maxMNB = accuracyMNB
+        maxBNB = accuracyBNB
+        maxLReg = accuracyLReg
+        maxSGD = accuracySGD
+        maxLSVC = accuracyLSVC
 
-# Voted Classifier
-votedClassifier = VoteClassifier(MultinomialNBClassifier,
-                                 BernoulliNBClassifier,
-                                 LogisticRegressionclassifier,
-                                 StochasticGradientDescentClassifier,
-                                 LinearSVCClassifier)
+        saveClassifier = open('mnb.pickle', 'wb')
+        pickle.dump(MultinomialNBClassifier, saveClassifier)
+        saveClassifier.close()
 
-def factAnalysis(text):
-    features = findFeatures(text)
-    return votedClassifier.classify(features), votedClassifier.confidence(features)
+        saveClassifier = open('bnb.pickle', 'wb')
+        pickle.dump(BernoulliNBClassifier, saveClassifier)
+        saveClassifier.close()
 
+        saveClassifier = open('lreg.pickle', 'wb')
+        pickle.dump(LogisticRegressionclassifier, saveClassifier)
+        saveClassifier.close()
+
+        saveClassifier = open('sgd.pickle', 'wb')
+        pickle.dump(StochasticGradientDescentClassifier, saveClassifier)
+        saveClassifier.close()
+
+        saveClassifier = open('lsvc.pickle', 'wb')
+        pickle.dump(LinearSVCClassifier, saveClassifier)
+        saveClassifier.close()
+
+    print('Average: ', avg)
+    print('MNB: ', accuracyMNB)
+    print('BNB: ', accuracyBNB)
+    print('LReg: ', accuracyLReg)
+    print('SGD: ', accuracySGD)
+    print('LSVC: ', accuracyLSVC)
+    print()
+
+    print('Max Average: ', maxAvg)
+    print('Max MNB: ', maxMNB)
+    print('Max BNB: ', maxBNB)
+    print('Max LReg: ', maxLReg)
+    print('Max SGD: ', maxSGD)
+    print('Max LSVC: ', maxLSVC)
+    print()

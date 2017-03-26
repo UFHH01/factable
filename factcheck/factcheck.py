@@ -59,29 +59,26 @@ featureSets = pickle.load(featureSetsFile)
 featureSetsFile.close()
 
 # Training and testing set
-trainingSet = featureSets[:350]
-testingSet = featureSets[350:]
-
-open_file = open("multinomialNaiveBayes.pickle", "rb")
+open_file = open("mnb.pickle", "rb")
 MultinomialNBClassifier = pickle.load(open_file)
 open_file.close()
 
-open_file = open("bernoulliNaiveBayes.pickle", "rb")
+open_file = open("bnb.pickle", "rb")
 BernoulliNBClassifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("logisticRegression.pickle", "rb")
+open_file = open("lreg.pickle", "rb")
 LogisticRegressionClassifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("linearSVC.pickle", "rb")
+open_file = open("lsvc.pickle", "rb")
 LinearSVCClassifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("stochasticGradientDescent.pickle", "rb")
+open_file = open("sgd.pickle", "rb")
 StochasticGradientDescentClassifier = pickle.load(open_file)
 open_file.close()
 
